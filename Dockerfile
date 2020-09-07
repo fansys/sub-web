@@ -10,7 +10,8 @@ WORKDIR /app
 COPY . /app
 RUN yarn build
 
-FROM nginx:1.16-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+FROM caddy/caddy:latest
+COPY --from=build /app/dist /www
+COPY Caddyfile /etc/caddy/Caddyfile
 EXPOSE 80
-CMD [ "nginx", "-g", "daemon off;" ]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
