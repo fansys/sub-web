@@ -64,6 +64,9 @@
                     <el-button slot="append" @click="gotoRemoteConfig" icon="el-icon-link">配置示例</el-button>
                   </el-select>
                 </el-form-item>
+                <el-form-item label="自定义配置:">
+                  <el-input v-model="form.customConfig" placeholder="请输入自定义配置" />
+                </el-form-item>
                 <el-form-item label="IncludeRemarks:">
                   <el-input v-model="form.includeRemarks" placeholder="节点名包含的关键字，支持正则" />
                 </el-form-item>
@@ -220,12 +223,11 @@
 
 <script>
 const project = process.env.VUE_APP_PROJECT
-const remoteConfigSample = process.env.VUE_APP_SUBCONVERTER_REMOTE_CONFIG
 const gayhubRelease = process.env.VUE_APP_BACKEND_RELEASE
-const defaultBackend = process.env.VUE_APP_SUBCONVERTER_DEFAULT_BACKEND + '/sub?'
-const shortUrlBackend = process.env.VUE_APP_MYURLS_DEFAULT_BACKEND + '/short'
-const configUploadBackend = process.env.VUE_APP_CONFIG_UPLOAD_BACKEND + '/config/upload'
-const tgBotLink = process.env.VUE_APP_BOT_LINK
+const tgBotLink = "https://t.me/CareyWong_bot";
+const remoteApiConfig = "config/api.json";
+const remoteProfileConfig = "config/profile.json";
+
 
 export default {
   data() {
@@ -252,105 +254,21 @@ export default {
           ssd: "ssd",
           v2ray: "v2ray"
         },
-        backendOptions: [{ value: "http://127.0.0.1:25500/sub?" }],
-        remoteConfig: [
-          {
-            label: "universal",
-            options: [
-              {
-                label: "No-Urltest",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/universal/no-urltest.ini"
-              },
-              {
-                label: "Urltest",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/universal/urltest.ini"
-              }
-            ]
-          },
-          {
-            label: "customized",
-            options: [
-              {
-                label: "Maying",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/maying.ini"
-              },
-              {
-                label: "rixCloud",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/rixcloud.ini"
-              },
-              {
-                label: "YoYu",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/yoyu.ini"
-              },
-              {
-                label: "Ytoo",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/ytoo.ini"
-              },
-              {
-                label: "NyanCAT",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/nyancat.ini"
-              },
-              {
-                label: "Nexitally",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/nexitally.ini"
-              },
-              {
-                label: "SoCloud",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/socloud.ini"
-              },
-              {
-                label: "ARK",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/ark.ini"
-              },
-              {
-                label: "ssrCloud",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/ssrcloud.ini"
-              },
-              {
-                label: "贼船",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/zeichuan.ini"
-              },
-              {
-                label: "布丁",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/customized/pud.ini"
-              }
-            ]
-          },
-          {
-            label: "Special",
-            options: [
-              {
-                label: "NeteaseUnblock(仅规则，No-Urltest)",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini"
-              },
-              {
-                label: "Basic(仅GEOIP CN + Final)",
-                value:
-                  "https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini"
-              }
-            ]
-          }
-        ]
+        apiConfig: {
+          remoteConfigSample: "",
+          defaultBackend: "",
+          shortUrlBackend: "",
+          configUploadBackend: "",
+          backendOptions: []
+        },
+        remoteConfig: []
       },
       form: {
         sourceSubUrl: "",
         clientType: "",
         customBackend: "",
         remoteConfig: "",
+        customConfig: "",
         excludeRemarks: "",
         includeRemarks: "",
         filename: "",
@@ -384,9 +302,13 @@ export default {
       dialogUploadConfigVisible: false,
       uploadConfig: "",
       uploadPassword: "",
-      myBot: tgBotLink,
-      sampleConfig: remoteConfigSample
+      myBot: tgBotLink
     };
+  },
+  computed: {
+    sampleConfig() {
+      return this.options.apiConfig.remoteConfigSample;
+    }
   },
   created() {
     document.title = "Subscription Converter";
@@ -400,7 +322,8 @@ export default {
   mounted() {
     this.form.clientType = "clash";
     this.notify();
-    this.getBackendVersion();
+    this.getRemoteApiConfig();
+    this.getRemoteProfileConfig();
   },
   methods: {
     onCopy() {
@@ -413,7 +336,7 @@ export default {
       window.open(gayhubRelease);
     },
     gotoRemoteConfig() {
-      window.open(remoteConfigSample);
+      window.open(this.options.apiConfig.remote);
     },
     clashInstall() {
       if (this.customSubUrl === "") {
@@ -423,12 +346,7 @@ export default {
 
       const url = "clash://install-config?url=";
       window.open(
-        url +
-          encodeURIComponent(
-            this.curtomShortSubUrl !== ""
-              ? this.curtomShortSubUrl
-              : this.customSubUrl
-          )
+        url + this.encodeUrl(this.curtomShortSubUrl !== "" ? this.curtomShortSubUrl : this.customSubUrl)
       );
     },
     surgeInstall() {
@@ -448,58 +366,44 @@ export default {
 
       let backend =
         this.form.customBackend === ""
-          ? defaultBackend
+          ? this.options.apiConfig.defaultBackend
           : this.form.customBackend;
 
       let sourceSub = this.form.sourceSubUrl;
       sourceSub = sourceSub.replace(/(\n|\r|\n\r)/g, "|");
 
-      this.customSubUrl =
-        backend +
-        "target=" +
-        this.form.clientType +
-        "&url=" +
-        encodeURIComponent(sourceSub) +
-        "&insert=" +
-        this.form.insert;
+      this.customSubUrl = backend +
+        "target=" + this.form.clientType +
+        "&url=" + this.encodeUrl(sourceSub) +
+        "&insert=" + this.form.insert;
 
       if (this.advanced === "2") {
-        if (this.form.remoteConfig !== "") {
-          this.customSubUrl +=
-            "&config=" + encodeURIComponent(this.form.remoteConfig);
+        if (this.form.customConfig.trim() !== "") {
+          this.customSubUrl += "&config=" + this.encodeUrl(this.form.customConfig.trim());
+        } else if (this.form.remoteConfig !== "") {
+          this.customSubUrl += "&config=" + this.encodeUrl(this.form.remoteConfig);
         }
         if (this.form.excludeRemarks !== "") {
-          this.customSubUrl +=
-            "&exclude=" + encodeURIComponent(this.form.excludeRemarks);
+          this.customSubUrl += "&exclude=" + this.encodeUrl(this.form.excludeRemarks);
         }
         if (this.form.includeRemarks !== "") {
-          this.customSubUrl +=
-            "&include=" + encodeURIComponent(this.form.includeRemarks);
+          this.customSubUrl += "&include=" + this.encodeUrl(this.form.includeRemarks);
         }
         if (this.form.filename !== "") {
-          this.customSubUrl +=
-            "&filename=" + encodeURIComponent(this.form.filename);
+          this.customSubUrl += "&filename=" + this.encodeUrl(this.form.filename);
         }
         if (this.form.appendType) {
-          this.customSubUrl +=
-            "&append_type=" + this.form.appendType.toString();
+          this.customSubUrl += "&append_type=" + this.form.appendType.toString();
         }
 
         this.customSubUrl +=
-          "&emoji=" +
-          this.form.emoji.toString() +
-          "&list=" +
-          this.form.nodeList.toString() +
-          "&udp=" +
-          this.form.udp.toString() +
-          "&tfo=" +
-          this.form.tfo.toString() +
-          "&scv=" +
-          this.form.scv.toString() +
-          "&fdn=" +
-          this.form.fdn.toString() +
-          "&sort=" +
-          this.form.sort.toString();
+          "&emoji=" + this.form.emoji.toString() +
+          "&list=" + this.form.nodeList.toString() +
+          "&udp=" + this.form.udp.toString() +
+          "&tfo=" + this.form.tfo.toString() +
+          "&scv=" + this.form.scv.toString() +
+          "&fdn=" + this.form.fdn.toString() +
+          "&sort=" + this.form.sort.toString();
 
         if (this.form.tpl.surge.doh === true) {
           this.customSubUrl += "&surge.doh=true";
@@ -529,7 +433,7 @@ export default {
       data.append("longUrl", btoa(this.customSubUrl));
 
       this.$axios
-        .post(shortUrlBackend, data, {
+        .post(this.options.apiConfig.shortUrlBackend, data, {
           header: {
             "Content-Type": "application/form-data; charset=utf-8"
           }
@@ -576,7 +480,7 @@ export default {
       data.append("config", this.uploadConfig);
 
       this.$axios
-        .post(configUploadBackend, data, {
+        .post(this.options.apiConfig.configUploadBackend, data, {
           header: {
             "Content-Type": "application/form-data; charset=utf-8"
           }
@@ -604,7 +508,7 @@ export default {
         });
     },
     backendSearch(queryString, cb) {
-      let backends = this.options.backendOptions;
+      let backends = this.options.apiConfig.backendOptions;
 
       let results = queryString
         ? backends.filter(this.createFilter(queryString))
@@ -620,7 +524,31 @@ export default {
         );
       };
     },
+    getRemoteApiConfig() {
+      this.$axios.get(this.getNoCacheUrl(remoteApiConfig)).then(res => {
+        const result = res.data;
+        let apiConfig = this.options.apiConfig;
+        apiConfig.remoteConfigSample = result.remoteConfigSample;
+        apiConfig.shortUrlBackend = result.shortUrlBackend;
+        apiConfig.configUploadBackend = result.configUploadBackend;
+        apiConfig.backendOptions = result.backendOptions;
+        result.backendOptions.forEach(item => {
+          if (item.default == true) {
+            apiConfig.defaultBackend = item.value;
+          }
+        });
+        this.form.customBackend = apiConfig.defaultBackend;
+        this.getBackendVersion();
+      });
+    },
+    getRemoteProfileConfig() {
+      this.$axios.get(this.getNoCacheUrl(remoteProfileConfig)).then(res => {
+        const result = res.data;
+        this.options.remoteConfig = result;
+      });
+    },
     getBackendVersion() {
+      const defaultBackend = this.options.apiConfig.defaultBackend;
       this.$axios
         .get(
           defaultBackend.substring(0, defaultBackend.length - 5) + "/version"
@@ -662,6 +590,17 @@ export default {
         value: itemValue
       }
       localStorage.setItem(itemKey, JSON.stringify(data))
+    },
+    getNoCacheUrl(url) {
+      let _t = new Date().getTime();
+      if (url.indexOf("?") > 0) {
+        return url + "&_t=" + _t;
+      } else {
+        return url + "?_t=" + _t;
+      }
+    },
+    encodeUrl(url) {
+      return encodeURI(url).replace(/\?/g, '%3F').replace(/&/g, '%26').replace(/=/g, '%3D')
     }
   },
 };
