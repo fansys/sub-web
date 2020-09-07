@@ -1,0 +1,59 @@
+name: Github CI Docker
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY_SHENZHEN: 'registry.cn-shenzhen.aliyuncs.com'
+  REGISTRY_HANGZHOU: 'registry.cn-hangzhou.aliyuncs.com'
+  REGISTRY_SHANGHAI: 'registry.cn-shanghai.aliyuncs.com'
+  REGISTRY_BEIJING: 'registry.cn-beijing.aliyuncs.com'
+  REPOSITORY: 'fansy/sub-web'
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      # checkout
+      - uses: actions/checkout@v2.2.0
+        with:
+          repository: fansys/sub-web
+      
+      # build docker images
+      - name: Build and push Docker images shenzhen
+        uses: docker/build-push-action@v1
+        with:
+          registry: ${{ env.REGISTRY_SHENZHEN }}
+          repository: ${{ env.REPOSITORY }}
+          username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
+          password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
+          tags: 'latest,${{ github.run_id }}'
+          
+      - name: Build and push Docker images hangzhou
+        uses: docker/build-push-action@v1
+        with:
+          registry: ${{ env.REGISTRY_HANGZHOU }}
+          repository: ${{ env.REPOSITORY }}
+          username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
+          password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
+          tags: 'latest,${{ github.run_id }}'
+          
+      - name: Build and push Docker images shanghai
+        uses: docker/build-push-action@v1
+        with:
+          registry: ${{ env.REGISTRY_SHANGHAI }}
+          repository: ${{ env.REPOSITORY }}
+          username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
+          password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
+          tags: 'latest,${{ github.run_id }}'
+          
+      - name: Build and push Docker images beijing
+        uses: docker/build-push-action@v1
+        with:
+          registry: ${{ env.REGISTRY_BEIJING }}
+          repository: ${{ env.REPOSITORY }}
+          username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
+          password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
+          tags: 'latest,${{ github.run_id }}'
