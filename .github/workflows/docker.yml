@@ -16,6 +16,13 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+
+      # Set Environment Variables
+      - name: Set Environment Variables
+        run: |
+          timestamp=`date '+%Y%m%d'`
+          echo '::set-env name=TIMESTAMP::'$timestamp
+
       # checkout
       - uses: actions/checkout@v2.2.0
         with:
@@ -29,7 +36,7 @@ jobs:
           repository: ${{ env.REPOSITORY }}
           username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
           password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
-          tags: 'latest,${{ github.run_id }}'
+          tags: 'latest,${{ env.TIMESTAMP }}'
           
       - name: Build and push Docker images hangzhou
         uses: docker/build-push-action@v1
@@ -38,7 +45,7 @@ jobs:
           repository: ${{ env.REPOSITORY }}
           username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
           password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
-          tags: 'latest,${{ github.run_id }}'
+          tags: 'latest,${{ env.TIMESTAMP }}'
           
       - name: Build and push Docker images shanghai
         uses: docker/build-push-action@v1
@@ -47,7 +54,7 @@ jobs:
           repository: ${{ env.REPOSITORY }}
           username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
           password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
-          tags: 'latest,${{ github.run_id }}'
+          tags: 'latest,${{ env.TIMESTAMP }}'
           
       - name: Build and push Docker images beijing
         uses: docker/build-push-action@v1
@@ -56,4 +63,4 @@ jobs:
           repository: ${{ env.REPOSITORY }}
           username: '${{ secrets.ALIYUN_IMAGES_HUB_USER_NAME }}'
           password: '${{ secrets.ALIYUN_IMAGES_HUB_TOKEN }}'
-          tags: 'latest,${{ github.run_id }}'
+          tags: 'latest,${{ env.TIMESTAMP }}'
